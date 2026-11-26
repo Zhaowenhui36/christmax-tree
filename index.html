@@ -5,145 +5,116 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Christmas Tree</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0}
 body{
   background:#000;
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
   overflow:hidden;
 }
-canvas{display:block}
-.txt{
-  position:absolute;
-  color:#fff;
-  font-size:32px;
+canvas{
+  display:block;
+}
+.text{
+  position:fixed;
+  bottom:120px;
+  left:50%;
+  transform:translateX(-50%);
+  color:#b8e8ff;
+  font-size:34px;
   font-weight:bold;
-  letter-spacing:6px;
-  text-shadow: 0 0 8px #fff,0 0 16px #4cf;
-  margin-top: 420px;
+  letter-spacing:8px;
+  text-shadow: 0 0 10px #80d8ff;
 }
 </style>
 </head>
 <body>
-<canvas id="canvas"></canvas>
-<div class="txt">zzzzwh</div>
+<canvas id="c"></canvas>
+<div class="text">zzzzwh</div>
 <script>
-document.addEventListener('DOMContentLoaded', ()=>{
-const canvas = document.getElementById('canvas');
+const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-let W = canvas.width = window.innerWidth;
-let H = canvas.height = window.innerHeight;
-
+let w = canvas.width = window.innerWidth;
+let h = canvas.height = window.innerHeight;
 window.addEventListener('resize',()=>{
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
 })
 
-class Point{
-  constructor(x,y,vx,vy,size,color){
-    this.x = x;
-    this.y = y;
-    this.vx = vx;
-    this.vy = vy;
-    this.size = size;
-    this.color = color;
+class Particle{
+  constructor(){
+    this.x = 0;
+    this.y = 0;
+    this.z = 0;
+    this.vx = 0;
+    this.vy = 0;
+    this.vz = 0;
     this.alpha = 1;
   }
   update(){
     this.x += this.vx;
     this.y += this.vy;
-    this.alpha -= 0.006;
+    this.z += this.vz;
+    this.alpha -= 0.0035;
   }
   draw(){
+    const sx = this.x / this.z * 220 + w/2;
+    const sy = this.y / this.z * 220 + h*0.32;
     ctx.save();
     ctx.globalAlpha = this.alpha;
     ctx.beginPath();
-    ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
-    ctx.fillStyle = this.color;
+    ctx.arc(sx, sy, 1.6, 0, Math.PI*2);
+    ctx.fillStyle="#b0e4ff";
     ctx.fill();
     ctx.restore();
   }
 }
+let list = [];
+let snow = [];
 
-let snowList = [];
+function createTreeParticle(t){
+  const p = new Particle();
+  const k = 0.72;
+  const r = k * (220 - t) * Math.sin(t*2.8);
+  p.x = r * Math.cos(t);
+  p.y = -t * 1.3;
+  p.z = r * Math.sin(t);
+  p.vx = (Math.random()-0.5)*0.025;
+  p.vy = Math.random()*0.02;
+  p.vz = (Math.random()-0.5)*0.025;
+  return p;
+}
 function createSnow(){
-  const x = Math.random()*W;
-  const y = -10;
-  const vy = Math.random()*1.2+0.6;
-  const vx = (Math.random()-0.5)*0.6;
-  const size = Math.random()*2+1;
-  snowList.push(new Point(x,y,vx,vy,size,'#ffffff'))
+  const s = new Particle();
+  s.x = (Math.random()-0.5)*w*1.4;
+  s.y = -20;
+  s.z = Math.random()*120+40;
+  s.vy = Math.random()*0.4 + 0.15;
+  s.vx = (Math.random()-0.5)*0.12;
+  return s;
 }
-
-function drawTree(){
-  ctx.save();
-  ctx.translate(W/2,H*0.32);
-  // 树干
-  ctx.fillStyle='#6b4423';
-  ctx.fillRect(-22,130,44,70);
-  // 三层树冠
-  function drawLayer(y,scale){
-    ctx.save();
-    ctx.translate(0,y);
-    ctx.scale(scale,scale);
-    ctx.beginPath();
-    ctx.moveTo(0,-120);
-    ctx.lineTo(-95,40);
-    ctx.lineTo(95,40);
-    ctx.closePath();
-    ctx.fillStyle='#007722';
-    ctx.fill();
-    ctx.restore();
+let t = 0;
+function loop(){
+  ctx.fillStyle="rgba(0,0,0,0.06)";
+  ctx.fillRect(0,0,w,h);
+  t += 0.022;
+  if(t < 220){
+    list.push(createTreeParticle(t));
   }
-  drawLayer(0,0.45);
-  drawLayer(42,0.65);
-  drawLayer(82,0.88);
-  // 彩灯
-  const lightColors = ['#ff3333','#ffdd00','#33ddff','#ff33dd','#33ff33'];
-  for(let i=0;i<28;i++){
-    const ang = Math.random()*Math.PI*2;
-    const r = Math.random()*90;
-    const lx = Math.cos(ang)*r;
-    const ly = Math.sin(ang)*r + 40;
-    ctx.beginPath();
-    ctx.arc(lx,ly,4,0,Math.PI*2);
-    ctx.fillStyle = lightColors[Math.floor(Math.random()*lightColors.length)];
-    ctx.fill();
+  if(Math.random()>0.75){
+    snow.push(createSnow());
   }
-  // 顶星
-  ctx.fillStyle='#ffdd00';
-  ctx.beginPath();
-  let sx=0,sy=-122;
-  for(let i=0;i<5;i++){
-    const a = Math.PI*2/5*i - Math.PI/2;
-    const px = sx + Math.cos(a)*14;
-    const py = sy + Math.sin(a)*14;
-    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-    const a2 = a+Math.PI/5;
-    const px2 = sx + Math.cos(a2)*6;
-    const py2 = sy + Math.sin(a2)*6;
-    ctx.lineTo(px2,py2);
+  for(let i = list.length-1;i>=0;i--){
+    list[i].update();
+    list[i].draw();
+    if(list[i].alpha <= 0) list.splice(i,1);
   }
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
+  for(let i = snow.length-1;i>=0;i--){
+    snow[i].update();
+    snow[i].draw();
+    if(snow[i].alpha <=0) snow.splice(i,1);
+  }
+  requestAnimationFrame(loop);
 }
-function animate(){
-  ctx.clearRect(0,0,W,H);
-  drawTree();
-  if(Math.random()>0.72) createSnow();
-  for(let i = snowList.length-1;i>=0;i--){
-    snowList[i].update();
-    snowList[i].draw();
-    if(snowList[i].alpha <= 0) snowList.splice(i,1);
-  }
-  requestAnimationFrame(animate);
-}
-animate();
-})
+loop();
 </script>
 </body>
 </html>
