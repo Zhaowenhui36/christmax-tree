@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title></title>
+<title>Christmas Tree</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{
@@ -34,40 +34,4 @@ canvas{display:block}
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let W = canvas.width = window.innerWidth;
-let H = canvas.height = window.innerHeight;
-window.addEventListener('resize',()=>{
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-})
-class Point{
-  constructor(x,y,vx,vy,size,color){
-    this.x = x;
-    this.y = y;
-    this.vx = vx;
-    this.vy = vy;
-    this.size = size;
-    this.color = color;
-    this.alpha = 1;
-  }
-  update(){
-    this.x += this.vx;
-    this.y += this.vy;
-    this.alpha -= 0.006;
-  }
-  draw(){
-    ctx.save();
-    ctx.globalAlpha = this.alpha;
-    ctx.beginPath();
-    ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
-    ctx.fillStyle = this.color;
-    ctx.fill();
-    ctx.restore();
-  }
-}
-let snowList = [];
-function createSnow(){
-  const x = Math.random()*W;
-  const y = -10;
-  const vy = Math.random()*1.2+0.6;
-  const vx = (Math.random()-0.5)*0.6;
-  const size = Math.random()*
+let H 
