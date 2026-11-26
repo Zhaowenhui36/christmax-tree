@@ -5,132 +5,112 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Christmas Tree</title>
 <style>
-*{margin:0;padding:0}
+*{margin:0;padding:0;box-sizing:border-box}
 body{
   background:#000;
   overflow:hidden;
 }
-canvas{
-  display:block;
-}
-.text{
+canvas{display:block}
+.bottom-text{
   position:fixed;
   bottom:80px;
   left:50%;
   transform:translateX(-50%);
-  color:#b8e8ff;
+  color:#b0e4ff;
   font-size:34px;
   font-weight:bold;
   letter-spacing:8px;
-  text-shadow: 0 0 10px #80d8ff;
+  text-shadow:0 0 10px #80d8ff;
 }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div class="text">zzzzwh</div>
+<div class="bottom-text">zzzzwh</div>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 let w = canvas.width = window.innerWidth;
 let h = canvas.height = window.innerHeight;
-window.addEventListener('resize',()=>{
+window.addEventListener('resize', ()=>{
   w = canvas.width = window.innerWidth;
   h = canvas.height = window.innerHeight;
 })
 
-class Particle{
-  constructor(){
-    this.x = 0;
-    this.y = 0;
-    this.z = 0;
-    this.vx = 0;
-    this.vy = 0;
-    this.vz = 0;
-    this.alpha = 1;
+// 圣诞树螺旋点阵
+const treePoints = [];
+// 雪花
+const snow = [];
+
+// 生成锥形螺旋（越往上半径越小）
+function buildTree(){
+  for(let theta = 0; theta < 7.2 * Math.PI; theta += 0.06){
+    // 高度系数 0~1
+    const t = theta / (7.2 * Math.PI);
+    // 底部宽，顶部收窄
+    const r = (1 - t) * 120;
+    const x = r * Math.cos(theta);
+    const y = t * -340;
+    const z = r * Math.sin(theta);
+    treePoints.push({x,y,z,ox:x,oy:y,oz:z})
   }
-  update(){
-    this.x += this.vx;
-    this.y += this.vy;
-    this.z += this.vz;
-    this.alpha -= 0.0032;
+  // 树顶爱心
+  for(let t=0;t<2*Math.PI;t+=0.08){
+    const hx = 16 * Math.pow(Math.sin(t),3);
+    const hy = -(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t)) - 355;
+    const hz = 0;
+    treePoints.push({x:hx,y:hy,z:hz,ox:hx,oy:hy,oz:hz})
   }
-  draw(){
-    const sx = this.x / this.z * 210 + w/2;
-    const sy = this.y / this.z * 210 + h*0.84;
-    ctx.save();
-    ctx.globalAlpha = this.alpha;
+}
+
+function makeSnowflake(){
+  return {
+    x:Math.random()*w,
+    y:-10,
+    s:Math.random()*1.2+0.4,
+    speedY:Math.random()*0.4+0.15,
+    speedX:(Math.random()-0.5)*0.15
+  }
+}
+for(let i=0;i<80;i++) snow.push(makeSnowflake())
+
+buildTree();
+
+function loop(){
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.fillRect(0,0,w,h);
+
+  // 圣诞树粒子轻微抖动
+  for(let p of treePoints){
+    p.x = p.ox + (Math.random()-0.5)*0.7;
+    p.y = p.oy + (Math.random()-0.5)*0.7;
+    p.z = p.oz + (Math.random()-0.5)*0.7;
+    // 简单透视
+    const scale = 200/(p.z+220);
+    const sx = w/2 + p.x * scale;
+    const sy = h*0.78 + p.y * scale;
     ctx.beginPath();
-    ctx.arc(sx, sy, 1.7, 0, Math.PI*2);
+    ctx.arc(sx, sy, 1.6, 0, Math.PI*2);
+    ctx.fillStyle='#b0e4ff';
+    ctx.fill();
+  }
+
+  // 雪花
+  for(let i=snow.length-1;i>=0;i--){
+    const s = snow[i];
+    s.y += s.speedY;
+    s.x += s.speedX;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.s,0,Math.PI*2);
     ctx.fillStyle="#b0e4ff";
     ctx.fill();
-    ctx.restore();
+    if(s.y>h){
+      snow[i]=makeSnowflake();
+    }
   }
+  requestAnimationFrame(loop);
 }
-let treeParticles = [];
-let snowList = [];
-
-function createTreePoint(theta){
-  const p = new Particle();
-  const heightRatio = theta / 8.5;
-  const r = (1 - heightRatio) * 130;
-  p.x = r * Math.cos(theta);
-  p.y = - heightRatio * 360;
-  p.z = r * Math.sin(theta) + 180;
-  p.vx = (Math.random()-0.5)*0.022;
-  p.vy = Math.random()*0.018;
-  p.vz = (Math.random()-0.5)*0.022;
-  return p;
-}
-function createHeart(){
-  const hp = new Particle();
-  const t = Math.random() * Math.PI * 2;
-  hp.x = 16 * Math.pow(Math.sin(t),3);
-  hp.y = - (13 * Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t)) - 370;
-  hp.z = 180;
-  hp.vx = (Math.random()-0.5)*0.015;
-  hp.vy = Math.random()*0.012;
-  hp.vz = (Math.random()-0.5)*0.015;
-  return hp;
-}
-function createSnow(){
-  const s = new Particle();
-  s.x = (Math.random()-0.5)*w*1.3;
-  s.y = -30;
-  s.z = Math.random()*110 + 35;
-  s.vy = Math.random()*0.38 + 0.14;
-  s.vx = (Math.random()-0.5)*0.11;
-  return s;
-}
-
-let theta = 0;
-function animate(){
-  ctx.fillStyle="rgba(0,0,0,0.055)";
-  ctx.fillRect(0,0,w,h);
-  theta += 0.024;
-  if(theta < 8.5){
-    treeParticles.push(createTreePoint(theta));
-  }
-  if(Math.random()>0.62){
-    treeParticles.push(createHeart());
-  }
-  if(Math.random()>0.76){
-    snowList.push(createSnow());
-  }
-
-  for(let i = treeParticles.length-1;i>=0;i--){
-    treeParticles[i].update();
-    treeParticles[i].draw();
-    if(treeParticles[i].alpha <= 0) treeParticles.splice(i,1);
-  }
-  for(let i = snowList.length-1;i>=0;i--){
-    snowList[i].update();
-    snowList[i].draw();
-    if(snowList[i].alpha <=0) snowList.splice(i,1);
-  }
-  requestAnimationFrame(animate);
-}
-animate();
+loop();
 </script>
 </body>
 </html>
